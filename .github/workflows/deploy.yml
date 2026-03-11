@@ -1,0 +1,44 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build
+        run: mvn clean package
+
+      - name: (SAST) SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: (SCA) Snyk scan
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Docker build
+        run: docker build -t secure-java-app .
+
+      - name: (Container scan) Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'secure-java-app'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
