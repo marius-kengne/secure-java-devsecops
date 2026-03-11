@@ -69,4 +69,22 @@ jobs:
         with:
           image-ref: secure-java-app
           severity: CRITICAL,HIGH
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: 0
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-container-scan
+
+      # Gate de sécurité séparé — bloque le pipeline si CRITICAL trouvé
+      - name: Fail on CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: secure-java-app
+          severity: CRITICAL
           exit-code: 1
+          format: table
