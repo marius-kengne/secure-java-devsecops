@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# ── Permission nécessaire pour GitHub Security Dashboard ──
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   security:
     runs-on: ubuntu-latest
@@ -30,18 +35,17 @@ jobs:
       - name: Build Maven
         run: mvn clean package -DskipTests
 
-      # SAST
+      # ── SAST ──────────────────────────────────────────────
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Install Snyk CLI
+      # ── SCA : dépendances opensource Maven ────────────────
       - name: Install Snyk
         uses: snyk/actions/setup@master
 
-      # SCA
-      - name: Snyk dependency scan
+      - name: Snyk dependency scan (pom.xml)
         run: |
           snyk auth ${{ secrets.SNYK_TOKEN }}
           node --max-old-space-size=4096 $(which snyk) test \
@@ -59,12 +63,12 @@ jobs:
           name: snyk-results
           path: snyk-results.json
 
-      # Docker build
+      # ── Docker build ───────────────────────────────────────
       - name: Build Docker image
         run: docker build -t secure-java-app .
 
-      # Container scan
-      - name: Trivy scan
+      # ── Container scan : image Docker ─────────────────────
+      - name: Trivy scan (Docker image)
         uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: secure-java-app
@@ -73,15 +77,15 @@ jobs:
           output: trivy-results.sarif
           exit-code: 0
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload Trivy results to GitHub Security  # ← v3 → v4
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
           category: trivy-container-scan
 
-      # Gate de sécurité séparé — bloque le pipeline si CRITICAL trouvé
-      - name: Fail on CRITICAL vulnerabilities
+      # Gate bloquant uniquement sur CRITICAL
+      - name: Block on CRITICAL vulnerabilities
         uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: secure-java-app
