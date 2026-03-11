@@ -10,7 +10,7 @@ RUN mvn clean package -DskipTests
 
 
 # Stage 2 : Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25.0.1_8-jre-alpine
 RUN apk upgrade --no-cache
 WORKDIR /app
 
