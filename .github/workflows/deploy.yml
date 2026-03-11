@@ -28,8 +28,13 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: (SCA) Snyk scan
-        uses: snyk/actions/maven@master
+      # Install Snyk CLI
+      - name: Install Snyk
+        uses: snyk/actions/setup@master
+
+      # Dependency Scan
+      - name: (SCA) Run Snyk scan
+        run: snyk test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
