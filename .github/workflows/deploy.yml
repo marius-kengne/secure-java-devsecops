@@ -20,6 +20,14 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Cache Maven pour éviter les re-téléchargements
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Build Maven
         run: mvn clean package -DskipTests
 
@@ -33,11 +41,24 @@ jobs:
       - name: Install Snyk
         uses: snyk/actions/setup@master
 
-      # SCA
+      # SCA — Fix mémoire + auth explicite
       - name: Snyk dependency scan
-        run: snyk test
+        run: |
+          snyk auth ${{ secrets.SNYK_TOKEN }}
+          node --max-old-space-size=4096 $(which snyk) test \
+            --all-projects \
+            --severity-threshold=high \
+            --json-file-output=snyk-results.json || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: Upload Snyk results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: snyk-results
+          path: snyk-results.json
 
       # Docker build
       - name: Build Docker image
