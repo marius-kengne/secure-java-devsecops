@@ -11,7 +11,7 @@ RUN mvn clean package -DskipTests
 
 # Stage 2 : Runtime
 FROM eclipse-temurin:17-jre-alpine
-
+RUN apk upgrade --no-cache
 WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring
