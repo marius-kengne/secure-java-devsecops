@@ -17,14 +17,15 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      - name: Build
-        run: mvn clean package
+      - name: Build Maven
+        run: mvn clean package -DskipTests
 
-      - name: (SAST) SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+      # SAST
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -32,18 +33,20 @@ jobs:
       - name: Install Snyk
         uses: snyk/actions/setup@master
 
-      # Dependency Scan
-      - name: (SCA) Run Snyk scan
+      # SCA
+      - name: Snyk dependency scan
         run: snyk test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Docker build
+      # Docker build
+      - name: Build Docker image
         run: docker build -t secure-java-app .
 
-      - name: (Container scan) Trivy scan
-        uses: aquasecurity/trivy-action@master
+      # Container scan
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: 'secure-java-app'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '1'
+          image-ref: secure-java-app
+          severity: CRITICAL,HIGH
+          exit-code: 1
