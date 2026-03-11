@@ -1,0 +1,1 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=marius-kengne_secure-java-devsecops&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=marius-kengne_secure-java-devsecops)
